@@ -6,7 +6,7 @@ import undetected_chromedriver as uc
 st.title("Menu Scraper with Selenium")
 
 # Input for URL
-url = st.text_input("Enter the URL to scrape:", "")
+url = st.text_input("Enter the URL to scrape:", "https://hungerstation.com/sa-en/restaurant/eataly/riyadh/al-muhammadeya/11829?utm_source")
 
 # Input for Debug Mode
 debug_mode = st.checkbox("Disable headless mode for debugging", value=False)
