@@ -1,14 +1,11 @@
 import streamlit as st
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import pandas as pd
 import tempfile
-import os
 
 # Streamlit UI
 def main():
@@ -18,27 +15,22 @@ def main():
 
     if st.button("Scrape Menu"):
         with st.spinner("Scraping the menu. Please wait..."):
-            driver = None  # Initialize driver to None
             try:
-                # Set up Chrome options
-                chrome_options = Options()
-                chrome_options.add_argument("--headless")  # Run in headless mode
-                chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-                chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+                # Use undetected_chromedriver for better compatibility
+                import undetected_chromedriver.v2 as uc
+                options = Options()
+                options.add_argument("--headless")
+                options.add_argument("--no-sandbox")
+                options.add_argument("--disable-dev-shm-usage")
 
-                # Set ChromeDriver path
-                chrome_driver_path = "/usr/bin/chromedriver"  # Update this path as per your environment
-
-                # Initialize WebDriver
-                driver = webdriver.Chrome(service=Service(chrome_driver_path), options=chrome_options)
+                # Initialize undetected ChromeDriver
+                driver = uc.Chrome(options=options)
 
                 # Open the URL
                 driver.get(url)
 
-                # Wait for the page to load (modify if CAPTCHA exists)
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "card"))
-                )
+                # Wait for the page to load
+                driver.implicitly_wait(10)
 
                 # Get page source
                 page_source = driver.page_source
@@ -79,11 +71,6 @@ def main():
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
-
-            finally:
-                # Close the driver if it was initialized
-                if driver:
-                    driver.quit()
 
 if __name__ == "__main__":
     main()
