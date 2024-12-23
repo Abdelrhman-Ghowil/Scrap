@@ -1,11 +1,8 @@
 import streamlit as st
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
+from seleniumbase import Driver
 from bs4 import BeautifulSoup
 import pandas as pd
 import tempfile
-import undetected_chromedriver.v2 as uc
 
 # Streamlit UI
 def main():
@@ -16,28 +13,19 @@ def main():
     if st.button("Scrape Menu"):
         with st.spinner("Scraping the menu. Please wait..."):
             try:
-                # Configure Chrome options
-                options = Options()
-                options.add_argument("--headless")
-                options.add_argument("--no-sandbox")
-                options.add_argument("--disable-dev-shm-usage")
+                # Initialize driver in UC Mode
+                driver = Driver(uc=True)
 
-                # Specify the binary location of Chrome
-                options.binary_location = "/usr/bin/google-chrome"  # Adjust this path based on your system
+                # Open URL with CAPTCHA handling
+                driver.uc_open_with_reconnect(url, 4)
 
-                # Initialize undetected ChromeDriver with binary location
-                driver = uc.Chrome(options=options)
-
-                # Open the URL
-                driver.get(url)
-
-                # Wait for the page to load
-                driver.implicitly_wait(10)
+                # Wait for CAPTCHA completion (if necessary)
+                driver.uc_gui_click_captcha()
 
                 # Get page source
                 page_source = driver.page_source
 
-                # Parse the HTML with BeautifulSoup
+                # Use BeautifulSoup to parse the HTML
                 soup = BeautifulSoup(page_source, 'html.parser')
 
                 # Extract menu items
@@ -73,6 +61,10 @@ def main():
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+
+            finally:
+                # Close the driver
+                driver.quit()
 
 if __name__ == "__main__":
     main()
