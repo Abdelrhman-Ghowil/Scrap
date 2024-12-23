@@ -4,3 +4,4 @@ pandas
 streamlit
 lxml
 selenium 
+undetected-chromedriver==2.1.1
