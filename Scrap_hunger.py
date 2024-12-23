@@ -1,8 +1,14 @@
 import streamlit as st
-from seleniumbase import Driver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
 import tempfile
+import os
 
 # Streamlit UI
 def main():
@@ -14,19 +20,30 @@ def main():
         with st.spinner("Scraping the menu. Please wait..."):
             driver = None  # Initialize driver to None
             try:
-                # Initialize driver in UC Mode
-                driver = Driver(uc=True)
+                # Set up Chrome options
+                chrome_options = Options()
+                chrome_options.add_argument("--headless")  # Run in headless mode
+                chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+                chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
 
-                # Open URL with CAPTCHA handling
-                driver.uc_open_with_reconnect(url, 4)
+                # Set ChromeDriver path
+                chrome_driver_path = "/usr/bin/chromedriver"  # Update this path as per your environment
 
-                # Wait for CAPTCHA completion (if necessary)
-                driver.uc_gui_click_captcha()
+                # Initialize WebDriver
+                driver = webdriver.Chrome(service=Service(chrome_driver_path), options=chrome_options)
+
+                # Open the URL
+                driver.get(url)
+
+                # Wait for the page to load (modify if CAPTCHA exists)
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "card"))
+                )
 
                 # Get page source
                 page_source = driver.page_source
 
-                # Use BeautifulSoup to parse the HTML
+                # Parse the HTML with BeautifulSoup
                 soup = BeautifulSoup(page_source, 'html.parser')
 
                 # Extract menu items
