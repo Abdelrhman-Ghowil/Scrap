@@ -1,6 +1,6 @@
 import streamlit as st
 from bs4 import BeautifulSoup
-import undetected_chromedriver.v2 as uc
+import undetected_chromedriver as uc
 
 # Streamlit App
 st.title("Menu Scraper with Selenium")
