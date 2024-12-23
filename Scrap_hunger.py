@@ -12,6 +12,7 @@ def main():
 
     if st.button("Scrape Menu"):
         with st.spinner("Scraping the menu. Please wait..."):
+            driver = None  # Initialize driver to None
             try:
                 # Initialize driver in UC Mode
                 driver = Driver(uc=True)
@@ -63,8 +64,9 @@ def main():
                 st.error(f"An error occurred: {e}")
 
             finally:
-                # Close the driver
-                driver.quit()
+                # Close the driver if it was initialized
+                if driver:
+                    driver.quit()
 
 if __name__ == "__main__":
     main()
