@@ -1,32 +1,31 @@
 import streamlit as st
+from seleniumbase import Driver
 from bs4 import BeautifulSoup
-import undetected_chromedriver as uc
+import pandas as pd
+import tempfile
 
-# Streamlit App
-st.title("Menu Scraper with Selenium")
+# Streamlit UI
 
-# Input for URL
-url = st.text_input("Enter the URL to scrape:", value="https://hungerstation.com/sa-en/restaurant/eataly/riyadh/al-muhammadeya/11829?utm_source")
+st.title("HungerStation Menu Scraper")
 
-# Input for Debug Mode
-debug_mode = st.checkbox("Disable headless mode for debugging", value=False)
+url = st.text_input("Enter HungerStation URL", value="https://hungerstation.com/sa-en/restaurant/eataly/riyadh/al-muhammadeya/11829?utm_source")
 
 if st.button("Scrape Menu"):
-    if url:
+    with st.spinner("Scraping the menu. Please wait..."):
         try:
-            # Set up undetected Chrome driver
-            options = uc.ChromeOptions()
-            if not debug_mode:
-                options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            driver = uc.Chrome(options=options)
+            # Initialize driver in UC Mode
+            driver = Driver(uc=True, headless=False)
 
-            # Fetch the page source
-            driver.get(url)
+            # Open URL with CAPTCHA handling
+            driver.uc_open_with_reconnect(url, 4)
+
+            # Wait for CAPTCHA completion (if necessary)
+            driver.uc_gui_click_captcha()
+
+            # Get page source
             page_source = driver.page_source
 
-            # Parse the page source
+            # Use BeautifulSoup to parse the HTML
             soup = BeautifulSoup(page_source, 'html.parser')
 
             # Extract menu items
@@ -36,31 +35,31 @@ if st.button("Scrape Menu"):
             for item in menu_elements:
                 title = item.find('h2', class_='menu-item-title').text.strip() if item.find('h2', class_='menu-item-title') else None
                 description = item.find('p', class_='menu-item-description').text.strip() if item.find('p', class_='menu-item-description') else None
-                price = item.find('span', class_='text-greenBadge text-base mx-2').text.strip() if item.find('span', class_='text-greenBadge text-base mx-2') else None
+                price = item.find('p', class_='text-greenBadge text-base mx-2').text.strip() if item.find('p', class_='text-greenBadge text-base mx-2') else None
                 img = item.find('img')['src'] if item.find('img') else None
 
                 menu_items.append({
-                    'Name': title,
+                    'name': title,
                     'Description': description,
                     'Price': price,
-                    'Image Link': img
+                    'links': img
                 })
 
+            # Save extracted data to an Excel file
+            df = pd.DataFrame(menu_items)
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+            df.to_excel(temp_file.name, index=False)
+
+            st.success("Scraping completed!")
+
+            # Display the data
+            st.dataframe(df)
+
+            # Provide download link for the Excel file
+            with open(temp_file.name, "rb") as f:
+                st.download_button("Download Excel File", data=f, file_name="menu_items.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        finally:
             # Close the driver
             driver.quit()
 
-            # Display results
-            if menu_items:
-                st.success("Menu items scraped successfully!")
-                for menu_item in menu_items:
-                    st.subheader(menu_item['Name'])
-                    st.write(f"**Description:** {menu_item['Description']}")
-                    st.write(f"**Price:** {menu_item['Price']}")
-                    if menu_item['Image Link']:
-                        st.image(menu_item['Image Link'], width=200)
-            else:
-                st.warning("No menu items found.")
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-    else:
-        st.warning("Please enter a valid URL.")
